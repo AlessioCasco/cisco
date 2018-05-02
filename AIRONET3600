@@ -1,0 +1,193 @@
+Cloud_9#show run
+Building configuration...
+
+Current configuration : 4603 bytes
+!
+version 15.3
+no service pad
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service password-encryption
+!
+hostname Cloud_9
+!
+!
+logging rate-limit console 9
+enable secret 5 $1$jxmu$4/qTMXkDlGLJwf4MEsRmd/
+!
+aaa new-model
+!
+!
+!
+!
+!
+!
+!
+aaa session-id common
+led display off
+no ip source-route
+no ip cef
+ip domain name saete.io
+!
+!
+!
+!
+dot11 pause-time 100
+dot11 syslog
+!
+dot11 ssid Casco
+   vlan 2
+   authentication open
+   authentication key-management wpa
+   mbssid guest-mode
+   wpa-psk ascii 7 094B41061D09021100
+!
+dot11 ssid Casco_UK
+   vlan 1
+   authentication open
+   authentication key-management wpa
+   wpa-psk ascii 7 08784D1A5A4B5D4546585E
+!
+!
+!
+no ipv6 cef
+!
+!
+username Cisco password 7 02250D480809
+username alessio password 7 052A0A0A325F4706415D45405C5D577F72040B3F3A37175E
+!
+!
+bridge irb
+!
+!
+!
+interface Dot11Radio0
+ no ip address
+ !
+ encryption vlan 1 mode ciphers aes-ccm tkip
+ !
+ encryption vlan 2 mode ciphers aes-ccm tkip
+ !
+ ssid Casco
+ !
+ ssid Casco_UK
+ !
+ antenna gain 0
+ stbc
+ mbssid
+ speed  basic-1.0 basic-2.0 basic-5.5 basic-11.0 basic-6.0 basic-9.0 basic-12.0 basic-18.0 basic-24.0 basic-36.0 basic-48.0 basic-54.0 m0. m1. m2. m3. m4. m5. m6. m7. m8. m9. m10. m11. m12. m13. m14. m15. m16. m17. m18. m19. m20. m21. m22. m23.
+ power local 6
+ station-role root
+ no dot11 extension aironet
+!
+interface Dot11Radio0.1
+ encapsulation dot1Q 1 native
+ bridge-group 1
+ bridge-group 1 subscriber-loop-control
+ bridge-group 1 spanning-disabled
+ bridge-group 1 block-unknown-source
+ no bridge-group 1 source-learning
+ no bridge-group 1 unicast-flooding
+!
+interface Dot11Radio0.2
+ encapsulation dot1Q 2
+ bridge-group 2
+ bridge-group 2 subscriber-loop-control
+ bridge-group 2 spanning-disabled
+ bridge-group 2 block-unknown-source
+ no bridge-group 2 source-learning
+ no bridge-group 2 unicast-flooding
+!
+interface Dot11Radio1
+ no ip address
+ shutdown
+ !
+ encryption vlan 1 mode ciphers aes-ccm tkip
+ !
+ encryption vlan 2 mode ciphers aes-ccm tkip
+ !
+ ssid Casco
+ !
+ ssid Casco_UK
+ !
+ antenna gain 0
+ peakdetect
+ no dfs band block
+ stbc
+ mbssid
+ speed  basic-6.0 basic-9.0 basic-12.0 basic-18.0 basic-24.0 basic-36.0 basic-48.0 basic-54.0 m0. m1. m2. m3. m4. m5. m6. m7. m8. m9. m10. m11. m12. m13. m14. m15. m16. m17. m18. m19. m20. m21. m22. m23.
+ channel dfs
+ station-role root
+!
+interface Dot11Radio1.1
+ encapsulation dot1Q 1 native
+ bridge-group 1
+ bridge-group 1 subscriber-loop-control
+ bridge-group 1 spanning-disabled
+ bridge-group 1 block-unknown-source
+ no bridge-group 1 source-learning
+ no bridge-group 1 unicast-flooding
+!
+interface Dot11Radio1.2
+ encapsulation dot1Q 2
+ bridge-group 2
+ bridge-group 2 subscriber-loop-control
+ bridge-group 2 spanning-disabled
+ bridge-group 2 block-unknown-source
+ no bridge-group 2 source-learning
+ no bridge-group 2 unicast-flooding
+!
+interface GigabitEthernet0
+ no ip address
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0.1
+ encapsulation dot1Q 1 native
+ bridge-group 1
+ bridge-group 1 spanning-disabled
+ no bridge-group 1 source-learning
+!
+interface GigabitEthernet0.2
+ encapsulation dot1Q 2
+ bridge-group 2
+ bridge-group 2 spanning-disabled
+ no bridge-group 2 source-learning
+!
+interface BVI1
+ mac-address 24e9.b37c.b36d
+ ip address 192.168.254.2 255.255.255.0
+ no ip route-cache
+ ipv6 address dhcp
+ ipv6 address autoconfig
+!
+ip forward-protocol nd
+ip http server
+no ip http secure-server
+ip http help-path http://www.cisco.com/warp/public/779/smbiz/prodconfig/help/eag
+ip ssh version 2
+!
+!
+!
+bridge 1 route ip
+!
+!
+banner motd ^C
+*****************************************************************************************
+*                                _                 _    ___                             *
+*                            ___| | ___  _   _  __| |  / _ \                            *
+*                           / __| |/ _ \| | | |/ _` | | (_) |                           *
+*                          | (__| | (_) | |_| | (_| |  \__, |                           *
+*                           \___|_|\___/ \__,_|\__,_|    /_/                            *
+*                                                                                       *
+*                      !! FIRST OF ALL YOU ARE NOT WELCOME HERE !!                      *
+*                      All connections are monitored and recorded                       *
+*                  Disconnect IMMEDIATELY if you are not with Alessio!                  *
+*****************************************************************************************^C
+!
+line con 0
+line vty 0 4
+ length 0
+ transport input all
+!
+end
