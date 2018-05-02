@@ -1,0 +1,197 @@
+galactica# show run
+: Saved
+:
+: Serial Number: AAA0000A00A
+: Hardware:   ASA5505, 512 MB RAM, CPU Geode 500 MHz
+:
+ASA Version 9.1(7)12
+!
+terminal width 130
+hostname galactica
+domain-name saete.io
+enable password 8Ry2YjIyt7RRXU24 encrypted
+names
+!
+interface Ethernet0/0
+ switchport access vlan 10
+!
+interface Ethernet0/1
+!
+interface Ethernet0/2
+ switchport access vlan 2
+!
+interface Ethernet0/3
+ shutdown
+!
+interface Ethernet0/4
+ shutdown
+!
+interface Ethernet0/5
+ shutdown
+!
+interface Ethernet0/6
+ switchport trunk allowed vlan 1-2
+ switchport trunk native vlan 1
+ switchport mode trunk
+!
+interface Ethernet0/7
+ shutdown
+!
+interface Vlan1
+ nameif home
+ security-level 100
+ ip address 192.168.254.1 255.255.255.0
+!
+interface Vlan2
+ nameif guest
+ security-level 50
+ ip address 192.168.100.1 255.255.255.224
+!
+interface Vlan10
+ nameif outside
+ security-level 0
+ pppoe client vpdn group BT
+ ip address pppoe setroute
+!
+banner motd *****************************************************************************************
+banner motd *                              ____       _            _   _                            *
+banner motd *                             / ___| __ _| | __ _  ___| |_(_) ___ __ _                  *
+banner motd *                            | |  _ / _` | |/ _` |/ __| __| |/ __/ _` |                 *
+banner motd *                            | |_| | (_| | | (_| | (__| |_| | (_| (_| |                 *
+banner motd *                             \____|\__,_|_|\__,_|\___|\__|_|\___\__,_|                 *
+banner motd *                                                                                       *
+banner motd *                                                                                       *
+banner motd *                      !! FIRST OF ALL YOU ARE NOT WELCOME HERE !!                      *
+banner motd *                      All connections are monitored and recorded                       *
+banner motd *                  Disconnect IMMEDIATELY if you are not with Alessio!                  *
+banner motd *****************************************************************************************
+boot system disk0:/asa917-12-k8.bin
+ftp mode passive
+dns domain-lookup outside
+dns server-group DefaultDNS
+ name-server 8.8.8.8
+ name-server 8.8.8.4
+ domain-name saete.io
+object network obj_home
+ subnet 192.168.254.0 255.255.255.0
+object network obj_guest
+ subnet 192.168.100.0 255.255.255.224
+object network obj_nas_16881
+ host 192.168.254.10
+object network obj_nas_6881
+ host 192.168.254.10
+object-group network obj_gr_nets
+ description internal networks
+ network-object 192.168.254.0 255.255.255.0
+ network-object 192.168.100.0 255.255.255.224
+access-list in_home extended permit ip any any
+access-list in_guest extended deny ip any object-group obj_gr_nets
+access-list in_guest extended permit ip any any
+access-list in_outside extended permit tcp any host 192.168.254.10 eq 16881
+access-list in_outside extended permit udp any host 192.168.254.10 eq 6881
+pager lines 40
+mtu home 1500
+mtu guest 1500
+mtu outside 1500
+no failover
+icmp unreachable rate-limit 1 burst-size 1
+no asdm history enable
+arp timeout 14400
+no arp permit-nonconnected
+!
+object network obj_home
+ nat (home,outside) dynamic interface
+object network obj_guest
+ nat (guest,outside) dynamic interface
+object network obj_nas_16881
+ nat (home,outside) static interface service tcp 16881 16881
+object network obj_nas_6881
+ nat (home,outside) static interface service udp 6881 6881
+access-group in_home in interface home
+access-group in_guest in interface guest
+access-group in_outside in interface outside
+timeout xlate 3:00:00
+timeout pat-xlate 0:00:30
+timeout conn 1:00:00 half-closed 0:10:00 udp 0:02:00 icmp 0:00:02
+timeout sunrpc 0:10:00 h323 0:05:00 h225 1:00:00 mgcp 0:05:00 mgcp-pat 0:05:00
+timeout sip 0:30:00 sip_media 0:02:00 sip-invite 0:03:00 sip-disconnect 0:02:00
+timeout sip-provisional-media 0:02:00 uauth 0:05:00 absolute
+timeout tcp-proxy-reassembly 0:01:00
+timeout floating-conn 0:00:00
+dynamic-access-policy-record DfltAccessPolicy
+user-identity default-domain LOCAL
+aaa authentication ssh console LOCAL
+no snmp-server location
+no snmp-server contact
+crypto ipsec security-association pmtu-aging infinite
+crypto ca trustpool policy
+telnet timeout 5
+ssh stricthostkeycheck
+ssh 192.168.254.0 255.255.255.0 home
+ssh timeout 5
+ssh version 2
+ssh cipher encryption high
+ssh cipher integrity high
+ssh key-exchange group dh-group1-sha1
+console timeout 0
+vpdn group BT request dialout pppoe
+vpdn group BT localname bthomehub@btbroadband.com
+vpdn group BT ppp authentication chap
+vpdn username bthomehub@btbroadband.com password ***** store-local
+
+dhcpd dns 8.8.8.8 8.8.8.4
+dhcpd ping_timeout 500
+!
+dhcpd address 192.168.254.50-192.168.254.100 home
+dhcpd enable home
+!
+dhcpd address 192.168.100.2-192.168.100.30 guest
+dhcpd enable guest
+!
+threat-detection basic-threat
+threat-detection statistics access-list
+no threat-detection statistics tcp-intercept
+ntp server 216.239.35.0
+ntp server 216.239.35.4
+ntp server 216.239.35.8
+ntp server 216.239.35.12
+webvpn
+ anyconnect-essentials
+ cache
+  disable
+username alessio password Kybix8T71ZaemNHb encrypted privilege 15
+!
+class-map inspection_default
+ match default-inspection-traffic
+!
+!
+policy-map type inspect dns preset_dns_map
+ parameters
+  message-length maximum client auto
+  message-length maximum 512
+policy-map global_policy
+ class inspection_default
+  inspect dns preset_dns_map
+  inspect ftp
+  inspect h323 h225
+  inspect h323 ras
+  inspect rsh
+  inspect rtsp
+  inspect esmtp
+  inspect sqlnet
+  inspect skinny
+  inspect sunrpc
+  inspect xdmcp
+  inspect sip
+  inspect netbios
+  inspect tftp
+  inspect ip-options
+  inspect icmp
+  inspect icmp error
+  inspect http
+!
+service-policy global_policy global
+prompt hostname context
+no call-home reporting anonymous
+Cryptochecksum:3b95dfe62a0d7a4697399ffa314c63d7
+: end
