@@ -192,6 +192,8 @@ policy-map global_policy
 !
 service-policy global_policy global
 prompt hostname context
+auto-update poll-period 30 1 30
+auto-update server http://dns.saetta.eu:8080/nic_update?fqdn=uk.saetta.eu source outside
 no call-home reporting anonymous
 Cryptochecksum:3b95dfe62a0d7a4697399ffa314c63d7
 : end
