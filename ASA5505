@@ -51,7 +51,7 @@ interface Vlan10
  nameif outside
  security-level 0
  pppoe client vpdn group BT
- ip address pppoe setroute
+ ip address dhcp setroute
 !
 banner motd *****************************************************************************************
 banner motd *                              ____       _            _   _                            *
@@ -69,8 +69,8 @@ boot system disk0:/asa917-12-k8.bin
 ftp mode passive
 dns domain-lookup outside
 dns server-group DefaultDNS
- name-server 8.8.8.8
- name-server 8.8.8.4
+ name-server 1.1.1.1
+ name-server 1.0.0.1
  domain-name saete.io
 object network obj_home
  subnet 192.168.254.0 255.255.255.0
@@ -95,6 +95,7 @@ mtu guest 1500
 mtu outside 1500
 no failover
 icmp unreachable rate-limit 1 burst-size 1
+icmp deny any echo-reply outside
 no asdm history enable
 arp timeout 14400
 no arp permit-nonconnected
@@ -139,7 +140,7 @@ vpdn group BT localname bthomehub@btbroadband.com
 vpdn group BT ppp authentication chap
 vpdn username bthomehub@btbroadband.com password ***** store-local
 
-dhcpd dns 8.8.8.8 8.8.8.4
+dhcpd dns 1.1.1.1 1.0.0.1
 dhcpd ping_timeout 500
 !
 dhcpd address 192.168.254.50-192.168.254.100 home
@@ -195,5 +196,5 @@ prompt hostname context
 auto-update poll-period 30 1 30
 auto-update server http://dns.saetta.eu:8080/nic_update?fqdn=uk.saetta.eu source outside
 no call-home reporting anonymous
-Cryptochecksum:3b95dfe62a0d7a4697399ffa314c63d7
+Cryptochecksum:24617bb0694698b8cabbbc94ed59c772
 : end
