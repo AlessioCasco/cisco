@@ -1,0 +1,181 @@
+firefly#show run
+Building configuration...
+
+Current configuration : 3981 bytes
+!
+! Last configuration change at 01:14:00 UTC Wed Mar 1 2017
+!
+version 12.4
+no service pad
+service timestamps debug datetime msec show-timezone year
+service timestamps log datetime msec show-timezone year
+service password-encryption
+service internal
+!
+hostname firefly
+!
+boot-start-marker
+boot system flash c870-advipservicesk9-mz.124-15.T17.bin
+boot-end-marker
+!
+!
+aaa new-model
+!
+!
+aaa authentication enable default none
+!
+!
+aaa session-id common
+!
+!
+dot11 syslog
+!
+dot11 ssid Casco
+   vlan 1
+   authentication open
+   authentication key-management wpa
+   guest-mode
+   wpa-psk ascii 7 0114090B5F07130C2A
+!
+ip cef
+!
+!
+ip dhcp use vrf connected
+ip dhcp excluded-address 192.168.200.1 192.168.200.50
+!
+ip dhcp pool dhcp-lan
+   network 192.168.200.0 255.255.255.0
+   default-router 192.168.200.1
+   dns-server 8.8.8.8 8.8.8.4
+   domain-name saete.io
+!
+!
+ip domain lookup source-interface ATM0
+ip domain name saete.io
+!
+multilink bundle-name authenticated
+!
+!
+username alessio privilege 15 password 7 11281500040102035C7279767F6266774A27300A13535F544A
+!
+!
+archive
+ log config
+  hidekeys
+!
+!
+ip ssh version 2
+!
+bridge irb
+!
+!
+interface ATM0
+ no ip address
+ no ip redirects
+ no ip unreachables
+ no ip proxy-arp
+ ip flow ingress
+ no ip mroute-cache
+ no atm ilmi-keepalive
+ dsl operating-mode auto
+ dsl bitswap both
+ hold-queue 224 in
+!
+interface ATM0.1 point-to-point
+! configuration for Fastweb Italy
+ ip address dhcp
+ ip mtu 1492
+ ip flow ingress
+ ip nat outside
+ ip virtual-reassembly
+ ip tcp adjust-mss 1452
+ atm route-bridged ip
+ pvc 8/36
+  vc-hold-queue 500
+  encapsulation aal5snap
+ !
+!
+interface FastEthernet0
+!
+interface FastEthernet1
+!
+interface FastEthernet2
+!
+interface FastEthernet3
+!
+interface Dot11Radio0
+ no ip address
+ !
+ encryption vlan 1 mode ciphers aes-ccm tkip
+ !
+ broadcast-key vlan 1 change 60
+ !
+ !
+ ssid Casco
+ !
+ speed basic-1.0 basic-2.0 basic-5.5 6.0 9.0 basic-11.0 12.0 18.0 24.0 36.0 48.0 54.0
+ station-role root
+!
+interface Dot11Radio0.1
+ encapsulation dot1Q 1 native
+ no cdp enable
+ bridge-group 1
+ bridge-group 1 subscriber-loop-control
+ bridge-group 1 spanning-disabled
+ bridge-group 1 block-unknown-source
+ no bridge-group 1 source-learning
+ no bridge-group 1 unicast-flooding
+!
+interface Vlan1
+ no ip address
+ bridge-group 1
+ bridge-group 1 spanning-disabled
+!
+interface BVI1
+ ip address 192.168.200.1 255.255.255.0
+ ip nat inside
+ no ip virtual-reassembly
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip nat translation timeout 10
+ip nat inside source list 100 interface ATM0.1 overload
+!
+access-list 100 permit ip 192.168.200.0 0.0.0.255 any
+access-list 101 deny   icmp any any
+!
+!
+!
+!
+control-plane
+!
+bridge 1 route ip
+banner motd ^C*****************************************************************************************
+*                             _____ _           __ _                                    *
+*                            |  ___(_)_ __ ___ / _| |_   _                              *
+*                            | |_  | | '__/ _ \ |_| | | | |                             *
+*                            |  _| | | | |  __/  _| | |_| |                             *
+*                            |_|   |_|_|  \___|_| |_|\__, |                             *
+*                                                    |___/                              *
+*                                                                                       *
+*                      !! FIRST OF ALL YOU ARE NOT WELCOME HERE !!                      *
+*                      All connections are monitored and recorded                       *
+*                  Disconnect IMMEDIATELY if you are not with Alessio!                 *
+*****************************************************************************************^C
+!
+line con 0
+ no modem enable
+line aux 0
+line vty 0 4
+ transport input ssh
+!
+scheduler max-task-time 5000
+ntp clock-period 17182170
+ntp server 216.239.35.0
+ntp server 216.239.35.4
+ntp server 216.239.35.8
+ntp server 216.239.35.12
+end

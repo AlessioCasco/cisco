@@ -3,5 +3,6 @@ Cisco Configurations
 
 Configurations I use for various CISCO devices:
 
-* [ASA5505](ASA5505)
-* [AIRONET 3600](AIRONET3600)
+* [Cisco ASA5505](ASA5505)
+* [Cisco AIRONET 3600](AIRONET3600)
+* [Cisco 877W](877W)
