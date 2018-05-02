@@ -89,12 +89,16 @@ access-list in_guest extended deny ip any object-group obj_gr_nets
 access-list in_guest extended permit ip any any
 access-list in_outside extended permit tcp any host 192.168.254.10 eq 16881
 access-list in_outside extended permit udp any host 192.168.254.10 eq 6881
+access-list outside_access_in remark ICMP type 11 for traceroute
+access-list outside_access_in extended permit icmp any any time-exceeded
+access-list outside_access_in remark ICMP type 3 for Cisco and Linux
+access-list outside_access_in extended permit icmp any any unreachable
 pager lines 40
 mtu home 1500
 mtu guest 1500
 mtu outside 1500
 no failover
-icmp unreachable rate-limit 1 burst-size 1
+icmp unreachable rate-limit 10 burst-size 5
 icmp deny any echo-reply outside
 no asdm history enable
 arp timeout 14400
@@ -110,7 +114,7 @@ object network obj_nas_6881
  nat (home,outside) static interface service udp 6881 6881
 access-group in_home in interface home
 access-group in_guest in interface guest
-access-group in_outside in interface outside
+access-group outside_access_in in interface outside
 timeout xlate 3:00:00
 timeout pat-xlate 0:00:30
 timeout conn 1:00:00 half-closed 0:10:00 udp 0:02:00 icmp 0:00:02
@@ -190,11 +194,14 @@ policy-map global_policy
   inspect icmp
   inspect icmp error
   inspect http
+ class class-default
+  set connection decrement-ttl
 !
 service-policy global_policy global
 prompt hostname context
 auto-update poll-period 30 1 30
 auto-update server http://dns.saetta.eu:8080/nic_update?fqdn=uk.saetta.eu source outside
 no call-home reporting anonymous
-Cryptochecksum:24617bb0694698b8cabbbc94ed59c772
+Cryptochecksum:85a5489b6a21de0699be6a9c38f15f83
 : end
+
