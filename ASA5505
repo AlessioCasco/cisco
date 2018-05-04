@@ -195,13 +195,11 @@ policy-map global_policy
   inspect icmp error
   inspect http
  class class-default
-  set connection decrement-ttl
 !
 service-policy global_policy global
 prompt hostname context
 auto-update poll-period 30 1 30
 auto-update server http://dns.saetta.eu:8080/nic_update?fqdn=uk.saetta.eu source outside
 no call-home reporting anonymous
-Cryptochecksum:85a5489b6a21de0699be6a9c38f15f83
+Cryptochecksum:748a79efd64065c77654dcbdf5e4390d
 : end
-
