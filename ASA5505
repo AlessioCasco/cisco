@@ -11,6 +11,7 @@ hostname galactica
 domain-name saete.io
 enable password 8Ry2YjIyt7RRXU24 encrypted
 names
+ip local pool Remote_VPN 192.168.254.200-192.168.254.210 mask 255.255.255.0
 !
 interface Ethernet0/0
  switchport access vlan 10
@@ -67,6 +68,8 @@ banner motd *                  Disconnect IMMEDIATELY if you are not with Alessi
 banner motd *****************************************************************************************
 boot system disk0:/asa917-12-k8.bin
 ftp mode passive
+clock timezone GMT/BST 0
+clock summer-time GMT/BDT recurring last Sun Mar 1:00 last Sun Oct 2:00
 dns domain-lookup outside
 dns server-group DefaultDNS
  name-server 1.1.1.1
@@ -80,6 +83,10 @@ object network obj_nas_16881
  host 192.168.254.10
 object network obj_nas_6881
  host 192.168.254.10
+object network NETWORK_OBJ_192.168.254.192_26
+ subnet 192.168.254.192 255.255.255.192
+object network NETWORK_OBJ_192.168.254.192_27
+ subnet 192.168.254.192 255.255.255.224
 object-group network obj_gr_nets
  description internal networks
  network-object 192.168.254.0 255.255.255.0
@@ -93,16 +100,33 @@ access-list outside_access_in remark ICMP type 11 for traceroute
 access-list outside_access_in extended permit icmp any any time-exceeded
 access-list outside_access_in remark ICMP type 3 for Cisco and Linux
 access-list outside_access_in extended permit icmp any any unreachable
+access-list AnyConnect_Client_Local_Print extended deny ip any4 any4
+access-list AnyConnect_Client_Local_Print extended permit tcp any4 any4 eq lpd
+access-list AnyConnect_Client_Local_Print remark IPP: Internet Printing Protocol
+access-list AnyConnect_Client_Local_Print extended permit tcp any4 any4 eq 631
+access-list AnyConnect_Client_Local_Print remark Windows' printing port
+access-list AnyConnect_Client_Local_Print extended permit tcp any4 any4 eq 9100
+access-list AnyConnect_Client_Local_Print remark mDNS: multicast DNS protocol
+access-list AnyConnect_Client_Local_Print extended permit udp any4 host 224.0.0.251 eq 5353
+access-list AnyConnect_Client_Local_Print remark LLMNR: Link Local Multicast Name Resolution protocol
+access-list AnyConnect_Client_Local_Print extended permit udp any4 host 224.0.0.252 eq 5355
+access-list AnyConnect_Client_Local_Print remark TCP/NetBIOS protocol
+access-list AnyConnect_Client_Local_Print extended permit tcp any4 any4 eq 137
+access-list AnyConnect_Client_Local_Print extended permit udp any4 any4 eq netbios-ns
 pager lines 40
+logging asdm informational
 mtu home 1500
 mtu guest 1500
 mtu outside 1500
 no failover
 icmp unreachable rate-limit 10 burst-size 5
 icmp deny any echo-reply outside
+asdm image disk0:/asdm-792-152.bin
 no asdm history enable
 arp timeout 14400
 no arp permit-nonconnected
+nat (home,outside) source static any any destination static NETWORK_OBJ_192.168.254.192_26 NETWORK_OBJ_192.168.254.192_26 no-proxy-arp route-lookup
+nat (home,outside) source static any any destination static NETWORK_OBJ_192.168.254.192_27 NETWORK_OBJ_192.168.254.192_27 no-proxy-arp route-lookup
 !
 object network obj_home
  nat (home,outside) dynamic interface
@@ -126,10 +150,122 @@ timeout floating-conn 0:00:00
 dynamic-access-policy-record DfltAccessPolicy
 user-identity default-domain LOCAL
 aaa authentication ssh console LOCAL
+http server enable
+http 192.168.254.0 255.255.255.0 home
 no snmp-server location
 no snmp-server contact
+crypto ipsec ikev1 transform-set ESP-3DES-MD5 esp-3des esp-md5-hmac
+crypto ipsec ikev1 transform-set ESP-DES-MD5 esp-des esp-md5-hmac
+crypto ipsec ikev1 transform-set ESP-3DES-SHA esp-3des esp-sha-hmac
+crypto ipsec ikev1 transform-set ESP-AES-128-SHA esp-aes esp-sha-hmac
+crypto ipsec ikev1 transform-set ESP-AES-192-SHA esp-aes-192 esp-sha-hmac
+crypto ipsec ikev1 transform-set ESP-AES-128-MD5 esp-aes esp-md5-hmac
+crypto ipsec ikev1 transform-set ESP-AES-192-MD5 esp-aes-192 esp-md5-hmac
+crypto ipsec ikev1 transform-set ESP-AES-256-SHA esp-aes-256 esp-sha-hmac
+crypto ipsec ikev1 transform-set ESP-AES-256-MD5 esp-aes-256 esp-md5-hmac
+crypto ipsec ikev1 transform-set ESP-DES-SHA esp-des esp-sha-hmac
 crypto ipsec security-association pmtu-aging infinite
+crypto dynamic-map SYSTEM_DEFAULT_CRYPTO_MAP 65535 set pfs group1
+crypto dynamic-map SYSTEM_DEFAULT_CRYPTO_MAP 65535 set ikev1 transform-set ESP-AES-128-SHA ESP-AES-128-MD5 ESP-AES-192-SHA ESP-AES-192-MD5 ESP-AES-256-SHA ESP-AES-256-MD5 ESP-3DES-SHA ESP-3DES-MD5 ESP-DES-SHA ESP-DES-MD5
+crypto map outside_map 65535 ipsec-isakmp dynamic SYSTEM_DEFAULT_CRYPTO_MAP
+crypto map outside_map interface outside
+crypto ca trustpoint ASDM_TrustPoint0
+ enrollment self
+ subject-name CN=galactica
+ proxy-ldc-issuer
+ crl configure
 crypto ca trustpool policy
+crypto ca certificate chain ASDM_TrustPoint0
+ certificate f169405b
+    3082034f 30820237 a0030201 020204f1 69405b30 0d06092a 864886f7 0d010105
+    05003037 31123010 06035504 03130967 616c6163 74696361 3121301f 06092a86
+    4886f70d 01090216 1267616c 61637469 63612e73 61657465 2e696f30 1e170d31
+    38303731 33313634 3433365a 170d3238 30373130 31363434 33365a30 37311230
+    10060355 04031309 67616c61 63746963 61312130 1f06092a 864886f7 0d010902
+    16126761 6c616374 6963612e 73616574 652e696f 30820122 300d0609 2a864886
+    f70d0101 01050003 82010f00 3082010a 02820101 00d8a1e3 2ed4bbaf 31c4105b
+    577d80e4 a05abee8 8ab83b3e 691277ae 0ece469f cc5f66e9 1407a2e7 17df37ca
+    6091d1eb 204225e9 7ca73ba4 bac6a9d8 67b324fb 64eecc7c b363ed10 845cd0f4
+    302dfe22 556a8c37 fcebfd46 dc26bc70 c5d45f4c 9c486daf 9e97e6a7 a78ed62e
+    9acb3f1b 59b8c5f7 5f63a766 479ea63c 9b240407 20a82898 d918266c 715b60d3
+    3eaa44bc 5c7cea78 d8525a17 6caf265a 4832f010 d94f7a88 f5fc6238 28384bc1
+    5570ca6a 217b1dec aad6e82f 104c5fcc c0df4411 920f5c93 a7ac1a08 66e28bbd
+    fbeeceb4 2225cd27 09c7ce8c b55cf22f 4cde7beb 95519c2f 23e6c692 f7e1933d
+    4069aa1b 646fb0e0 f363157f 16f919dc 6562bc98 a1020301 0001a363 3061300f
+    0603551d 130101ff 04053003 0101ff30 0e060355 1d0f0101 ff040403 02018630
+    1f060355 1d230418 30168014 70c0024b 2c98fc27 8c68e5f5 cca3828b 5c9544ab
+    301d0603 551d0e04 16041470 c0024b2c 98fc278c 68e5f5cc a3828b5c 9544ab30
+    0d06092a 864886f7 0d010105 05000382 0101007b d7193c1e 12b34234 2d9c9134
+    ef320931 5f417c7b 54f013a7 4293bebd 382ede5b 3cdf7f21 b062ed3c 2a3eb796
+    41a7a9f7 62a40568 41a6b630 6288ddea c7d65a6a 7e19f77e 2cd62bf3 08fd4ba7
+    9f0bb56b ad03624c 9c03a912 74a35361 d3b7e10c 43bf8e99 65567372 61a93403
+    eae39e3d 3dd32d35 e16fb674 33ad38b5 0cfae9cd 8ab60bfd f0615597 08ce049c
+    831bd8e8 fcdb0554 d13d53e4 54d98af3 e9df89f1 546b64a9 1e046946 a338fbe5
+    ac3ba151 c8068a76 eb0c07b6 b9be548a 4ccb5fa1 768fa021 7ac1456a d435e5d8
+    5df93685 900a808f e42fb23c 1aa1467b 50794724 8f744a3e ad9166f6 ac599673
+    5e22dc20 0cc6f11b 29fb8d73 689e040e 32181b
+  quit
+crypto ikev1 enable outside
+crypto ikev1 policy 10
+ authentication pre-share
+ encryption aes-256
+ hash sha
+ group 2
+ lifetime 86400
+crypto ikev1 policy 20
+ authentication rsa-sig
+ encryption aes-256
+ hash sha
+ group 2
+ lifetime 86400
+crypto ikev1 policy 40
+ authentication pre-share
+ encryption aes-192
+ hash sha
+ group 2
+ lifetime 86400
+crypto ikev1 policy 50
+ authentication rsa-sig
+ encryption aes-192
+ hash sha
+ group 2
+ lifetime 86400
+crypto ikev1 policy 70
+ authentication pre-share
+ encryption aes
+ hash sha
+ group 2
+ lifetime 86400
+crypto ikev1 policy 80
+ authentication rsa-sig
+ encryption aes
+ hash sha
+ group 2
+ lifetime 86400
+crypto ikev1 policy 100
+ authentication pre-share
+ encryption 3des
+ hash sha
+ group 2
+ lifetime 86400
+crypto ikev1 policy 110
+ authentication rsa-sig
+ encryption 3des
+ hash sha
+ group 2
+ lifetime 86400
+crypto ikev1 policy 130
+ authentication pre-share
+ encryption des
+ hash sha
+ group 2
+ lifetime 86400
+crypto ikev1 policy 140
+ authentication rsa-sig
+ encryption des
+ hash sha
+ group 2
+ lifetime 86400
 telnet timeout 5
 ssh stricthostkeycheck
 ssh 192.168.254.0 255.255.255.0 home
@@ -154,8 +290,10 @@ dhcpd address 192.168.100.2-192.168.100.30 guest
 dhcpd enable guest
 !
 threat-detection basic-threat
-threat-detection statistics access-list
-no threat-detection statistics tcp-intercept
+threat-detection statistics
+threat-detection statistics tcp-intercept rate-interval 30 burst-rate 400 average-rate 200
+dynamic-filter updater-client enable
+dynamic-filter use-database
 ntp server 216.239.35.0
 ntp server 216.239.35.4
 ntp server 216.239.35.8
@@ -164,7 +302,22 @@ webvpn
  anyconnect-essentials
  cache
   disable
+group-policy RemoteVPN internal
+group-policy RemoteVPN attributes
+ dns-server value 1.1.1.1 1.0.0.1
+ vpn-tunnel-protocol ikev1
+ default-domain value saete.io
+ split-tunnel-all-dns disable
+username vpn password .J78YuF/d/eBiNOh encrypted
+username vpn attributes
+ service-type remote-access
 username alessio password Kybix8T71ZaemNHb encrypted privilege 15
+tunnel-group RemoteVPN type remote-access
+tunnel-group RemoteVPN general-attributes
+ address-pool Remote_VPN
+ default-group-policy RemoteVPN
+tunnel-group RemoteVPN ipsec-attributes
+ ikev1 pre-shared-key *****
 !
 class-map inspection_default
  match default-inspection-traffic
@@ -201,5 +354,6 @@ prompt hostname context
 auto-update poll-period 30 1 30
 auto-update server http://dns.saetta.eu:8080/nic_update?fqdn=uk.saetta.eu source outside
 no call-home reporting anonymous
-Cryptochecksum:748a79efd64065c77654dcbdf5e4390d
+hpm topN enable
+Cryptochecksum:656eb42bc1f72e3b936dc3ba1719451a
 : end
